@@ -86,7 +86,7 @@ class Connection:
         self.p1 = p1
         self.p2 = p2
         #self.p3 = p3
-        self.proto_id=p3
+        self.proto_id=int(p3)
         self.protocol = "unknown"
         self.curpath= "."
     def getFilename(self):
@@ -109,7 +109,9 @@ class Connection:
         self.curpath=APPCONFIG.GlobalConfig["outputpathname"]+os.path.sep+appname_s+os.path.sep
         #self.curpath=os.path.join(APPCONFIG.GlobalConfig["outputpathname"],APPCONFIG.GlobalConfig["appname"])
         APPCONFIG.mkdir_p(self.curpath)
-        return '%s%s-%d-%s-%s-%d.pcap'%(self.curpath, self.p1[0],self.p1[1],self.protocol, self.p2[0],self.p2[1])
+        #print (self.curpath, self.p1[0],self.p1[1],self.protocol, self.p2[0],self.p2[1])
+        m ='%s%s-%s-%s-%s-%s.pcap' % (self.curpath, self.p1[0], str(self.p1[1] ),self.protocol, str(self.p2[0] ),self.p2[1])
+        return m
     def FindNameFromXML(self, src, dst, protocol):
         for line in APPCONFIG.xmlbuffer:
             if (line[2][1] == src[0]  and line[3][1] ==str(src[1]) and line[4][1] == dst[0] and line[5][1] == str(dst[1]) and line[6][1] == protocol ):
@@ -396,6 +398,61 @@ def SplitPcapByNetdude():
     
     os.system('ls %s' % (APPCONFIG.GlobalConfig["tmp_netdude_path"] ))
     os.system("rm -rf %s"% (APPCONFIG.GlobalConfig["tmp_netdude_path"] ) )
+def getFiveTupleListFromDemuxedPath(demuxedpath):
+    #print ("in getFiveTupleFromDemuxedPath")
+    fivetuplelist=[]
+    for (thisDir, subsHere, filesHere) in os.walk(demuxedpath):
+        for filename in filesHere:
+            (shortname, extension) = os.path.splitext(filename)
+            pcapfullname = os.path.join(thisDir,filename)
+            if( os.path.isfile(pcapfullname) and (extension==".trace" or extension == ".TRACE" ) ):
+                ipprotocol_pair=thisDir.split(os.path.sep)[-3:]
+                pro_num=ipprotocol_pair[0]
+                ip_pair=ipprotocol_pair[-2:]
+                if ipprotocol_pair[0]  in ['6','17']:
+                    port_pair=shortname.split('-')[-2:]
+                    a = ((ip_pair[0],port_pair[0]),(ip_pair[1],port_pair[1]),pro_num)
+                    fivetuplelist.append(a)
+                else:
+                    logging.info ("no ip protocol %s "%(ipprotocol_pair[0]))
+    return fivetuplelist
+def SplitPcapByTraverseNetdudeDir():
+    shutil.rmtree(APPCONFIG.GlobalConfig["tmp_netdude_path"],ignore_errors=True)
+    netdude_cmd1=( "lndtool -r Demux -o %s %s" % (APPCONFIG.GlobalConfig["tmp_netdude_path"], APPCONFIG.GlobalConfig["pcapfilename"]) )
+    os.system(netdude_cmd1)
+    # Start decoding process.
+    #print ("%s\n%s\n%s"% (APPCONFIG.GlobalConfig["xmlfilename"], APPCONFIG.GlobalConfig["tmp_netdude_path"], APPCONFIG.GlobalConfig["outputpathname"]) )
+    xmlFilename =APPCONFIG.GlobalConfig['xmlfilename']
+    tmpNetdudeDir = APPCONFIG.GlobalConfig['tmp_netdude_path']
+    outputDir = APPCONFIG.GlobalConfig['outputpathname']
+    
+    fivetupleList=getFiveTupleListFromDemuxedPath(tmpNetdudeDir)
+    connections = []
+    merge_cmd=''
+    for i in fivetupleList:
+        #print (i)
+        con = Connection(i[0],i[1],i[2])
+        if con not in connections:
+            connections.append(con)
+            outputPCAPFileName=con.getFilename()
+            inputPCAPFileNameList=con.getNetdudeFileName()
+            #print (outputPCAPFileName)
+            #print (inputPCAPFileNameList)
+            merge_cmd1="mergecap -w %s" % (outputPCAPFileName)
+            merge_cmd_readtrace_filename=' '
+            for rr in inputPCAPFileNameList:
+                merge_cmd_readtrace_filename += ( "%s " % (rr) )
+            merge_cmd = ("%s%s" % (merge_cmd1, merge_cmd_readtrace_filename) )
+            print (merge_cmd)
+            os.system(merge_cmd)
+        else:
+            print ("duplicated! in SplitPcapByTraverseNetdudeDir")
+            print i
+    
+    os.system('ls %s' % (APPCONFIG.GlobalConfig["tmp_netdude_path"] ))
+    #os.system("rm -rf %s"% (APPCONFIG.GlobalConfig["tmp_netdude_path"] ) )
+    #os.system(merge_cmd)
+
 def main():
     #mkdir output_path
     APPCONFIG.mkdir_p(APPCONFIG.GlobalConfig["outputpathname"])
@@ -406,7 +463,8 @@ def main():
 	APPCONFIG.xmlbuffer.append(line)
     if APPCONFIG.GlobalConfig["isNetdude"] == True:
         logging.info("splitting pcap trace into flows by netdude")
-        SplitPcapByNetdude()
+        #SplitPcapByNetdude()
+        SplitPcapByTraverseNetdudeDir()
     if APPCONFIG.GlobalConfig["isSplit"]==True:
         logging.info("splitting pcap trace into flows")
         SplitPcap()
