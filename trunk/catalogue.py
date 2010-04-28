@@ -52,7 +52,7 @@ arff_head_s=('''@RELATION <netmate>
 @ATTRIBUTE bpsh_cnt NUMERIC
 @ATTRIBUTE furg_cnt NUMERIC
 @ATTRIBUTE burg_cnt NUMERIC
-@ATTRIBUTE open_class {''' ,
+@ATTRIBUTE opendpi_class {''' ,
 '}',
 '\n@ATTRIBUTE app_class {',
 '}',
