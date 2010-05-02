@@ -572,7 +572,8 @@ def MergepcapInDir(currentdirname):#TODO: add mergecap files into a list, then p
                     if ( os.path.isfile(tmp_pcap) and os.path.isfile(pcapname) ):
                         print ("  Y         Y  :You'd better not be here, but it OK")
                         os.remove(tmp_pcap)
-                        os.rename(pcapname,tmp_pcap)
+                        #os.rename(pcapname,tmp_pcap)
+                        os.system( "mv %s %s"% ( pcapname , tmp_pcap) )
                         cmd="mergecap -w %s  %s %s" % (pcapname,tmp_pcap,i)
                         os.system(cmd)
                         os.remove(tmp_pcap)
@@ -582,7 +583,8 @@ def MergepcapInDir(currentdirname):#TODO: add mergecap files into a list, then p
                         os.system(cmd)
                     elif ((not os.path.isfile(tmp_pcap)) and (os.path.isfile(pcapname)) ) :
                         print ("  N         Y") 
-                        os.rename(pcapname,tmp_pcap)
+                        #os.rename(pcapname,tmp_pcap)
+                        os.system( "mv %s %s" % ( pcapname,tmp_pcap ) )
                         cmd="mergecap -w %s  %s %s" % (pcapname,tmp_pcap,i)
                         os.system(cmd)
                         os.remove(tmp_pcap)
