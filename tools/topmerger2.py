@@ -8,6 +8,7 @@ from optparse import OptionParser
 from subprocess import Popen, PIPE, STDOUT
 import re
 import glob
+from collections import deque
 
 sys.stderr=sys.stdout
 
@@ -70,7 +71,16 @@ arff_head_s=('''@RELATION <netmate>
 
 ''')
 
-
+normal_prog=re.compile("[_0-9a-zA-Z]")
+def FuckString(s):
+    ss = s.split(".")[0]
+    rs = ""
+    for i in ss:
+        if not re.match(normal_prog,i):
+            i = ''
+        rs += i
+    #print (rs)
+    return rs
 if __name__ == '__main__':
     usage = "usage: %prog [options] arg1 arg2"
     parser = OptionParser(usage=usage)
@@ -84,6 +94,16 @@ if __name__ == '__main__':
                       metavar="INPUT_PATH", help="read from INPUT_PATH")
     parser.add_option("-o", "--output",dest="output_arff_file_name",
                       metavar="OUTPUT_FILES", help="write output OUTPUT_FILES")
+    parser.add_option("-s", "--set_queue_type", dest = "set_queue_type",
+                      help = "set queue type: all, opendpi, app, cata, none\n\
+                      all : maxmiun instances number\n\
+                      none : not limited\n\
+                      default/or not specified is opendpi queue.")
+    parser.add_option("-p","--pure_duplicatedflows",dest = "pureflow",
+                      action="store_true",default=False,
+                      help = "ignore duplicated flows")
+    parser.add_option("-n","--max_queue_len",dest = "max_queue_len",
+                      help = "set maxmium queue length, default is 5000")
     (options, args) = parser.parse_args()
     
     output_real_arff_file_name=""
@@ -144,7 +164,7 @@ if __name__ == '__main__':
     is_opendpi_class = False
     is_app_class = False
     is_cata_class = False
-    
+    fivetuples=[]
     writelines_data=[]
     for input_arff_filename in items:
         is_opendpi_class = False
@@ -219,25 +239,156 @@ if __name__ == '__main__':
                     cata_class = writline[ cata_col ].strip()
                     if cata_class not in cata_class_list:
                         cata_class_list.append(cata_class)
-                writelines_data.append( line )
+                if (options.pureflow == True) :
+                    s = writline[:5]
+                    #s = ""
+                    #for i in writline[:5]:
+                    #    s += i
+                    if ( s not in fivetuples ):
+                        if options.verbose == True:
+                            print (i)
+                        fivetuples.append(s)
+                        writelines_data.append( line )
+                    else:
+                        if options.verbose == True:
+                            print ("ignoring duplicated flows!")
+                        pass
+                else:
+                    writelines_data.append( line )
         print (magic_col_couter)
         p.close()     
-    #print lists
-    print ("---opendpi_class_list{")
-    for i in opendpi_class_list:
-        print (i)
-    print ("}opendpi_class_list-----")
-    print ("---app_class_list{")
-    for i in app_class_list:
-        print (i)
-    print ("}app_class_list-----")
-    print ("---cata_class_list{")
-    for i in cata_class_list:
-        print (i)
-    print ("}cata_class_list-----")
-    
-    #write output arff file
-    
+    ##print lists
+    if options.verbose == True:
+        print ("---opendpi_class_list{")
+        for i in opendpi_class_list:
+            print (i)
+        print ("}opendpi_class_list-----")
+        print ("---app_class_list{")
+        for i in app_class_list:
+            print (i)
+        print ("}app_class_list-----")
+        print ("---cata_class_list{")
+        for i in cata_class_list:
+            print (i)
+        print ("}cata_class_list-----")
+    print ("------------------------------")
+    QueueDict={}
+    QueueName_prefix = ""
+    if options.set_queue_type:
+        if options.max_queue_len:
+            max_length = int ( options.max_queue_len )
+            if options.set_queue_type == "all":
+                QueueName_prefix = 'mydeque_byall_'
+            elif options.set_queue_type == "cata":
+                if ( is_cata_class == True ):
+                    QueueName_prefix = 'mydeque_bycata_'
+                    for s in cata_class_list:
+                        createqueue_cmd = ( "%s%s = deque(maxlen = max_length )\nQueueDict[\'%s\'] = %s%s " % (QueueName_prefix,s,s,QueueName_prefix,s ) )
+                        createqueue_code = compile(createqueue_cmd,'','exec')
+                        exec(createqueue_code)
+                    #print (QueueDict)
+                    for i in writelines_data:
+                        #print (i)
+                        cata_type = i.strip().split(",")[cata_col]
+                        #print ( cata_type )
+                        appendqueue_cmd = "QueueDict[\'%s\'].append(i)" % (cata_type)
+                        appendqueue_code = compile(appendqueue_cmd,'','exec')
+                        exec(appendqueue_code)
+                    if options.verbose == True:
+                        for s in cata_class_list:
+                            printqueue_cmd = ( "print QueueDict['%s']" % s )
+                            printqueue_code = compile(printqueue_cmd,'','exec')
+                            exec(printqueue_code)
+                    writelines_data=[]
+                    for w in cata_class_list:
+                        QueueName_s=QueueName_prefix+w
+                        writequeue_cmd = ( "while True:\n\ttry:\n\t\tss = %s.pop()\n\t\t#print ss\n\t\twritelines_data.append(ss)\n\texcept IndexError:\n\t\tbreak " % (QueueName_s) )
+                        writequeue_code = compile(writequeue_cmd,'','exec')
+                        exec(writequeue_code)
+                    if options.verbose == True:
+                        for t in writelines_data:
+                            print (t.split(",")[-1])
+                else:
+                    print ("no cata_class in input arff")
+                    exit()
+            elif options.set_queue_type == "app":
+                if ( is_app_class == True ):
+                    QueueName_prefix='mydeque_byapp_'
+                    for ss in app_class_list:
+                        #print (ss)
+                        #s = ss.split(".")[0]
+                        s = FuckString(ss)
+                        createqueue_cmd = ( "%s%s = deque(maxlen = max_length )\nQueueDict[\'%s\'] = %s%s " % (QueueName_prefix,s,s,QueueName_prefix,s ) )
+                        createqueue_code = compile(createqueue_cmd,'','exec')
+                        exec(createqueue_code)
+                    #print (QueueDict)
+                    for i in writelines_data:
+                        #print (i)
+                        a = i.strip().split(",")[app_col]
+                        app_type = FuckString(a)
+                        #print ( cata_type )
+                        appendqueue_cmd = "QueueDict[\'%s\'].append(i)" % (app_type)
+                        appendqueue_code = compile(appendqueue_cmd,'','exec')
+                        exec(appendqueue_code)
+                    if options.verbose == True:
+                        for s in app_class_list:
+                            printqueue_cmd = ( "print QueueDict['%s']" % s )
+                            printqueue_code = compile(printqueue_cmd,'','exec')
+                            exec(printqueue_code)
+                    writelines_data=[]
+                    for w in app_class_list:
+                        rw = FuckString(w)
+                        QueueName_s=QueueName_prefix+rw
+                        writequeue_cmd = ( "while True:\n\ttry:\n\t\tss = %s.pop()\n\t\t#print ss\n\t\twritelines_data.append(ss)\n\texcept IndexError:\n\t\tbreak " % (QueueName_s) )
+                        writequeue_code = compile(writequeue_cmd,'','exec')
+                        exec(writequeue_code)
+                    if options.verbose == True:
+                        for t in writelines_data:
+                            print (t.split(",")[-1])
+                else:
+                    print ("no app_class in input arff")
+                    exit()
+            elif options.set_queue_type == "opendpi":
+                if (is_opendpi_class == True) :
+                    QueueName_prefix='mydeque_by_opendpi_'
+                    for ss in opendpi_class_list:
+                        #print (ss)
+                        #s = ss.split(".")[0]
+                        s = FuckString(ss)
+                        createqueue_cmd = ( "%s%s = deque(maxlen = max_length )\nQueueDict[\'%s\'] = %s%s " % (QueueName_prefix,s,s,QueueName_prefix,s ) )
+                        createqueue_code = compile(createqueue_cmd,'','exec')
+                        exec(createqueue_code)
+                    #print (QueueDict)
+                    for i in writelines_data:
+                        #print (i)
+                        a = i.strip().split(",")[opendpi_col]
+                        app_type = FuckString(a)
+                        #print ( cata_type )
+                        appendqueue_cmd = "QueueDict[\'%s\'].append(i)" % (app_type)
+                        appendqueue_code = compile(appendqueue_cmd,'','exec')
+                        exec(appendqueue_code)
+                    if options.verbose == True:
+                        for s in opendpi_class_list:
+                            printqueue_cmd = ( "print QueueDict['%s']" % s )
+                            printqueue_code = compile(printqueue_cmd,'','exec')
+                            exec(printqueue_code)
+                    writelines_data=[]
+                    for w in opendpi_class_list:
+                        rw = FuckString(w)
+                        QueueName_s=QueueName_prefix+rw
+                        writequeue_cmd = ( "while True:\n\ttry:\n\t\tss = %s.pop()\n\t\t#print ss\n\t\twritelines_data.append(ss)\n\texcept IndexError:\n\t\tbreak " % (QueueName_s) )
+                        writequeue_code = compile(writequeue_cmd,'','exec')
+                        exec(writequeue_code)
+                    if options.verbose == True:
+                        for t in writelines_data:
+                            print (t.split(",")[-1])
+                else:
+                    print ("no opendpi_class in input arff")
+                    exit()
+        else:
+            max_length = 5000
+    else:
+        print ("not specified max queue length, not limited!")
     output_file.write(arff_head_s[0])
     # write opendpi_class_list
     if is_opendpi_class:
