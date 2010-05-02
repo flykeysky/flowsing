@@ -1,12 +1,13 @@
 - Applications:
-    Fengxing: []
-    PPLive: [PPLive_PPAP.exe,unknown_PPAP.exe,unknown_PPLive_PPAP.exe,]
-    PPStream: []
+    Fengxing: [unknown_FunshionService.exe,]
+    PPLive: [PPLive_PPAP.exe,unknown_PPAP.exe,unknown_PPLive_PPAP.exe,unknown_HTTP_PPLiveU.exe,PPLive_PPAP.exe]
+    PPStream: [unknown_PPStream_ppsap.exe,unknown_ppsap.exe]
     Sougou: []
   CatalogueName: P2PTV
 - Applications:
-    Thunder: [unknown_Thunder=Webthunder_Thunder5.exe,unknown_Thunder=Webthunder_Thunder5.exe]
-    360Safe: [unknown_LiveUpdate360.exe,]
+    Thunder: 
+[unknown_Thunder=Webthunder_Thunder5.exe,unknown_Thunder=Webthunder_Thunder5.exe,unknown_Thunder.exe,unknown_ThunderService.exe]
+    360Safe: [unknown_HTTP_SoftManager.exe,unknown_LiveUpdate360.exe,STUN_LiveUpdate360.exe]
     utorrent: [unknown_uTorrent.exe,unknown_Bittorrent_uTorrent.exe,unknown_Bittorrent_-System-]
   CatalogueName: P2PFiles
 - Applications:
@@ -21,6 +22,8 @@
     ThunderBird: [unknown_HTTP_thunderbird.exe]
     QQ: [unknown_HTTP_QQ.exe]
     Svchost: [unknown_HTTP_svchost.exe]
+    OtherAPPhttp: 
+[unknown_HTTP_LiveUpdate360.exe,unknown_HTTP_360Safe.exe,unknown_HTTP_360tray.exe,unknown_HTTP_Funshion.exe,unknown_HTTP_Flash_Funshion.exe,unknown_HTTP_FunshionService.exe]
   CatalogueName: WEB
 - Applications:
     Gtalk: [unknown_googletalk.exe]
@@ -29,7 +32,7 @@
     CloudServer: [unknown_HTTP_CloudServer.exe,unknown_HTTP_SoftupNotify.exe]
     System: [unknown_HTTP_-System-]
     PPLive: [unknown_HTTP_PPLive.exe,unknown_HTTP_Flash_PPLive.exe,unknown_HTTP_PPAP.exe]
-    Thunder: [unknown_HTTP_Thunder5.exe]
+    Thunder: [unknown_HTTP_Thunder5.exe,unknown_HTTP_ThunderService.exe]
     ThunderBird: [unknown_HTTP_thunderbird.exe]
   CatalogueName: TALK
 - Applications:
@@ -39,5 +42,7 @@
     Cloud: [unknown_HTTP_SoftupNotify.exe]
   CatalogueName: BULK
 - Applications:
-    others: [DNS_svchost.exe,DNS_svchost.exe,unknown_cloud.exe,unknown_Thunder=Webthunder_Thunder5.exe,unknown_-System-,NETBIOS_System,unknown_System,unknown_SSL_thunderbird.exe,unknown_Mail_POP_thunderbird.exe,unknown_SSL_-System-,unknown_SSL_chrome.exe,unknown_SSL_RunDll32.exe]
+    others: 
+[unknown_cloud.exe,unknown_Thunder=Webthunder_Thunder5.exe,unknown_-System-,NETBIOS_System,unknown_System,unknown_SSL_thunderbird.exe,unknown_Mail_POP_thunderbird.exe,unknown_SSL_-System-,unknown_SSL_chrome.exe,unknown_SSL_RunDll32.exe]
+    DNS: [DNS_LiveUpdate360.exe,DNS_NBMonitor.exe,DNS_svchost.exe,DNS_SVCHOST.EXE,unknown_DNS_-System-,DNS_ThunderService.exe]
   CatalogueName: Others
