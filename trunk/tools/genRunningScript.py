@@ -136,7 +136,7 @@ if __name__ == '__main__':
     for n in computed_arff_list:
         #print (n)
         computed_arff_s+=n+" "
-    final_arff='ALLinONE.ARFF'
+    final_arff='ALLinONE.arff'
     writeline= ( "topmerger2.py  -q -p -n 3000 -s opendpi  -o %s -f %s\n\n" % ( final_arff, computed_arff_s ) )
     writelines.append(writeline)
     
