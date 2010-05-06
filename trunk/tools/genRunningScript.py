@@ -137,7 +137,7 @@ if __name__ == '__main__':
         #print (n)
         computed_arff_s+=n+" "
     final_arff='ALLinONE.ARFF'
-    writeline= ( "catalogue.py -d -c %s -o %s -f %s\n\n" % ( yamlconf,final_arff, computed_arff_s ) )
+    writeline= ( "topmerger2.py  -q -p -n 3000 -s opendpi  -o %s -f %s\n\n" % ( final_arff, computed_arff_s ) )
     writelines.append(writeline)
     
     writelines_s=''    
